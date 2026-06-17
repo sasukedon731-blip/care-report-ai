@@ -1,9 +1,4 @@
-type Result = {
-  points: string[]
-  missing: string[]
-  familyReport: string
-  internalReport: string
-}
+import { CareReportResult as Result } from "@/lib/reportTypes"
 
 function EmptyState() {
   return (
@@ -41,7 +36,7 @@ export default function CareReportResult({
         <div>
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-emerald-100 border-t-emerald-600" />
           <p className="mt-4 font-black text-slate-800">AIが報告文を確認しています</p>
-          <p className="mt-2 text-sm text-slate-500">添削ポイントと2種類の報告文を作成中です。</p>
+          <p className="mt-2 text-sm text-slate-500">介護用語を判定し、家族向け・社内向けに整えています。</p>
         </div>
       </div>
     )
@@ -51,6 +46,20 @@ export default function CareReportResult({
 
   return (
     <div className="space-y-4">
+      {result.detectedTerms?.length ? (
+        <Section title="介護用語の判定">
+          <div className="space-y-3">
+            {result.detectedTerms.map((item, index) => (
+              <div key={`${item.term}-${index}`} className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm leading-7 text-emerald-950">
+                <p className="font-black">{item.term} → {item.meaning}</p>
+                <p className="mt-1"><span className="font-bold">家族向け：</span>{item.familyExpression}</p>
+                <p><span className="font-bold">社内向け：</span>{item.internalExpression}</p>
+              </div>
+            ))}
+          </div>
+        </Section>
+      ) : null}
+
       <Section title="① 添削ポイント">
         <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-slate-700">
           {result.points?.map((point, index) => <li key={index}>{point}</li>)}

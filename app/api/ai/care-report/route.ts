@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import OpenAI from "openai"
 import { buildCareReportPrompt } from "@/lib/careReportPrompt"
+import { detectCareTerms } from "@/lib/careTerms"
 
 export const runtime = "nodejs"
 
@@ -9,6 +10,12 @@ type CareReportResult = {
   missing: string[]
   familyReport: string
   internalReport: string
+  detectedTerms?: {
+    term: string
+    meaning: string
+    familyExpression: string
+    internalExpression: string
+  }[]
 }
 
 function fallbackParse(text: string): CareReportResult {
@@ -17,6 +24,7 @@ function fallbackParse(text: string): CareReportResult {
     missing: [],
     familyReport: text,
     internalReport: text,
+    detectedTerms: [],
   }
 }
 
@@ -38,6 +46,8 @@ export async function POST(req: Request) {
       )
     }
 
+    const detectedTerms = detectCareTerms(inputText.trim())
+
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
     const completion = await openai.chat.completions.create({
@@ -50,7 +60,7 @@ export async function POST(req: Request) {
         },
         {
           role: "user",
-          content: buildCareReportPrompt(inputText.trim()),
+          content: buildCareReportPrompt(inputText.trim(), detectedTerms),
         },
       ],
       temperature: 0.3,
@@ -61,7 +71,17 @@ export async function POST(req: Request) {
 
     try {
       const parsed = JSON.parse(raw) as CareReportResult
-      return NextResponse.json(parsed)
+      return NextResponse.json({
+        ...parsed,
+        detectedTerms: parsed.detectedTerms?.length
+          ? parsed.detectedTerms
+          : detectedTerms.map((item) => ({
+              term: item.term,
+              meaning: item.meaning,
+              familyExpression: item.familyExpression,
+              internalExpression: item.internalExpression,
+            })),
+      })
     } catch {
       return NextResponse.json(fallbackParse(raw))
     }

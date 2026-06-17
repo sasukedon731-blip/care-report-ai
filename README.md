@@ -1,18 +1,22 @@
-# ケアレポAI MVP 会員履歴版
+# Care Report AI MVP（介護用語辞書対応版）
 
-介護報告書をAI添削し、家族向け報告・社内向け報告に整えるWebアプリです。
+介護報告文をAIで添削し、家族向け報告・社内向け報告に変換するMVPです。
+会員登録、ログイン、マイページ履歴保存、写真読み取り、介護略語・専門用語判定に対応しています。
 
-## 追加済み機能
+## 追加された介護用語辞書
 
-- メールアドレス・パスワードで会員登録
-- ログイン / ログアウト
-- マイページ `/mypage`
-- ログイン中のAI添削結果をFirestoreへ保存
-- マイページで履歴確認
-- 家族向け報告 / 社内向け報告のコピー
-- 履歴削除
-- 写真撮影・画像アップロードからOCR読み取り
-- 手入力でのAI添削
+入力文に `KOT`、`BT`、`BP`、`HR`、`SpO2`、`Ns`、`Dr`、`食介` などが含まれる場合、AIに渡す前に辞書で検出します。
+
+- 社内向け報告：略語を必要に応じて残す
+- 家族向け報告：略語をそのまま使わず、一般の家族に伝わる表現へ変換
+
+例：
+
+```text
+入力：A様、KOTあり。BT36.5。食介一部介助。
+家族向け：排便が確認され、体温も確認しました。食事は一部お手伝いしながら召し上がりました。
+社内向け：KOTあり。BT36.5。食介一部介助。
+```
 
 ## セットアップ
 
@@ -22,59 +26,27 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
-## Firebase設定
-
-Firebase Consoleで以下を有効にしてください。
-
-1. Authentication
-   - Sign-in method
-   - Email/Password を有効化
-
-2. Firestore Database
-   - データベースを作成
-   - `firestore.rules` の内容をルールに反映
-
-3. Firebase Webアプリ設定
-   - `.env.local` に `NEXT_PUBLIC_FIREBASE_...` を設定
-
-## OpenAI設定
-
-`.env.local` に以下を設定します。
+`.env.local` に以下を設定してください。
 
 ```env
-OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxx
+OPENAI_API_KEY=
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
 ```
 
-## Firestore構成
+## Firebase
 
-```text
-users/{uid}
-  name
-  email
-  role: staff
-  plan: free
+Authentication でメール/パスワードを有効化してください。
+Firestore Database を作成し、同梱の `firestore.rules` を適用してください。
 
-users/{uid}/reports/{reportId}
-  inputText
-  result.points
-  result.missing
-  result.familyReport
-  result.internalReport
-  createdAt
-  updatedAt
-```
+## 主なファイル
 
-## 画面URL
-
-```text
-/                  TOP
-/auth/register     会員登録
-/auth/login        ログイン
-/report            報告書AI添削
-/mypage            マイページ履歴
-/history           端末内履歴（未ログイン時の予備）
-```
-
-## 注意
-
-介護記録を扱うため、利用者氏名・住所・電話番号・具体的な病名などの個人情報は入力せず、「A様」「B様」に置き換えて使う想定です。
+- `lib/careTerms.ts`：介護用語辞書
+- `lib/careReportPrompt.ts`：介護用語対応プロンプト
+- `app/api/ai/care-report/route.ts`：AI添削API
+- `components/CareReportResult.tsx`：介護用語判定結果の表示
+- `components/MyPageReports.tsx`：マイページ履歴

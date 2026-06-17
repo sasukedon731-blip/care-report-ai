@@ -175,6 +175,21 @@ export default function MyPageReports() {
             </p>
           </div>
 
+          {selected.result.detectedTerms?.length ? (
+            <div className="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-5 shadow-lg shadow-slate-900/5">
+              <h2 className="text-xl font-black text-slate-900">介護用語の判定</h2>
+              <div className="mt-3 space-y-3">
+                {selected.result.detectedTerms.map((item, index) => (
+                  <div key={`${item.term}-${index}`} className="rounded-2xl border border-emerald-100 bg-white p-4 text-sm leading-7 text-emerald-950">
+                    <p className="font-black">{item.term} → {item.meaning}</p>
+                    <p><span className="font-bold">家族向け：</span>{item.familyExpression}</p>
+                    <p><span className="font-bold">社内向け：</span>{item.internalExpression}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-[2rem] border border-emerald-200 bg-white p-5 shadow-lg shadow-slate-900/5">
               <div className="flex items-center justify-between gap-3">
