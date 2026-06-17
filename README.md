@@ -57,3 +57,15 @@ Firestore Database を作成し、同梱の `firestore.rules` を適用してく
 - 社内向け報告では入力された氏名をそのまま使用
 - TOP画面・入力画面の注意文を社内利用前提に変更
 - `.gitignore` を追加し、`node_modules` / `.next` / `.env.local` がGitに入らないように設定
+
+## PWA / ホーム画面アイコン
+
+この版では `public/` フォルダにPWA用アイコンを追加済みです。
+
+- `public/icon-192.png`
+- `public/icon-512.png`
+- `public/icon-1024.png`
+- `public/apple-touch-icon.png`
+- `public/favicon.ico`
+
+`app/manifest.ts` と `app/layout.tsx` も反映済みなので、Vercel公開後にiPhone / iPad の Safari から「共有」→「ホーム画面に追加」でアイコン表示できます。
