@@ -14,12 +14,12 @@ export default function HomePage() {
             ケアレポAI
           </h1>
           <p className="mt-5 text-base leading-8 text-slate-700 md:text-lg">
-            現場で書いた報告文をAIが確認し、添削ポイント・不足情報・家族向け報告・社内向け報告に整理します。
+            現場で書いた報告文をAIが確認し、添削ポイント・不足情報・家族向け報告・社内向け報告に整理します。社内向け報告では氏名をそのまま残せます。
           </p>
 
           <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-900">
             <strong>入力前の注意：</strong>
-            利用者の氏名、住所、電話番号、具体的な病名などの個人情報は入力せず、「A様」「B様」のように置き換えてください。
+            このMVPは社内利用を想定し、氏名をそのまま残せます。外部共有する場合は、住所・電話番号などの不要な個人情報を入れないでください。
           </div>
 
           <div className="mt-8 flex flex-col gap-3 md:flex-row">

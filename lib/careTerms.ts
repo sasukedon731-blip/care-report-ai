@@ -79,9 +79,9 @@ export const careTerms: CareTerm[] = [
   {
     term: "Pt",
     meaning: "利用者・患者",
-    familyExpression: "A様",
+    familyExpression: "利用者様",
     internalExpression: "Pt / 利用者",
-    caution: "このアプリでは個人情報保護のため家族向けはA様に置き換える",
+    caution: "社内向けでは入力された氏名をそのまま残してよい",
     aliases: ["PT", "pt"],
   },
   {

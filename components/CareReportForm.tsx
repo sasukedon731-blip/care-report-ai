@@ -21,7 +21,7 @@ type HistoryItem = {
 }
 
 const sampleText =
-  "A様、昼食8割。午後レク参加。KOTあり。BT36.5。食介一部介助。特変なし。"
+  "田中花子様、昼食8割。午後レク参加。KOTあり。BT36.5。食介一部介助。特変なし。"
 
 const MAX_IMAGE_SIZE_MB = 8
 const MAX_IMAGE_SIZE = MAX_IMAGE_SIZE_MB * 1024 * 1024
@@ -189,12 +189,12 @@ export default function CareReportForm() {
           </p>
           <h2 className="text-xl font-black text-slate-900">報告文を入力</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            紙の報告書を撮影して読み取るか、手入力で報告文を入れてください。KOT・BT・BPなどの介護略語は、家族向けでは分かりやすい表現に変換します。
+            紙の報告書を撮影して読み取るか、手入力で報告文を入れてください。社内向けでは氏名をそのまま残し、KOT・BT・BPなどの介護略語も現場向けに整理します。家族向けでは略語を分かりやすい表現に変換します。
           </p>
         </div>
 
         <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-900">
-          個人情報は入力しないでください。利用者名は「A様」「B様」のように置き換えてください。写真内に氏名などが写る場合は、読み取り後に必ず削除・置換してください。
+          社内利用を想定して、利用者名はそのまま残せます。外部共有する場合は、住所・電話番号など不要な個人情報を入力しないでください。
         </div>
 
         {!user ? (
@@ -266,7 +266,7 @@ export default function CareReportForm() {
         <textarea
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="例：A様、昼食8割。午後レク参加。KOTあり。BT36.5。食介一部介助。特変なし。"
+          placeholder="例：田中花子様、昼食8割。午後レク参加。KOTあり。BT36.5。食介一部介助。特変なし。"
           className="min-h-[260px] w-full resize-y rounded-2xl border border-slate-200 bg-slate-50 p-4 text-base leading-8 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
         />
 
