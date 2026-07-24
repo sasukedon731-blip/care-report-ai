@@ -41,6 +41,18 @@ export default function BillingStatus() {
     )
   }
 
+  if (access.accountType === "company") {
+    return (
+      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="font-black">企業契約で利用中</p>
+          <p className="font-black">本日あと {access.remainingToday} / {DAILY_USAGE_LIMIT} 回</p>
+        </div>
+        <p className="mt-1 text-xs font-bold text-blue-800">{access.companyName} ／ 企業コード：{access.companyCode} ／ 利用期限：{formatDate(access.periodEnd)}</p>
+      </div>
+    )
+  }
+
   const plan = access.planId && access.planId in PLANS ? PLANS[access.planId as PlanId] : null
   return (
     <div className="rounded-2xl border border-teal-200 bg-teal-50 p-4 text-sm text-teal-950">

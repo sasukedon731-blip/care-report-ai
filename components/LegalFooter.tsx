@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 const links = [
+  ["法人向け", "/for-business"],
   ["特定商取引法に基づく表記", "/legal/tokusho"],
   ["利用規約", "/legal/terms"],
   ["プライバシーポリシー", "/legal/privacy"],

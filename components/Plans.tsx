@@ -5,11 +5,13 @@ import { useState } from "react"
 import { PLANS, PlanId } from "@/lib/plans"
 import { useAuth } from "./AuthProvider"
 import BillingStatus from "./BillingStatus"
+import { useAccess } from "./AccessProvider"
 
 const planOrder: PlanId[] = ["month1", "month6", "month12"]
 
 export default function Plans() {
   const { user, loading: authLoading } = useAuth()
+  const access = useAccess()
   const [processing, setProcessing] = useState<PlanId | null>(null)
   const [error, setError] = useState("")
 
@@ -39,6 +41,11 @@ export default function Plans() {
   return (
     <div>
       <BillingStatus />
+      {access.accountType === "company" ? (
+        <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm font-bold leading-7 text-blue-950">
+          企業契約ユーザーは勤務先の契約で利用できるため、個人プランの購入は必要ありません。
+        </div>
+      ) : null}
       <div className="mt-6 grid gap-5 lg:grid-cols-3">
         {planOrder.map((planId) => {
           const plan = PLANS[planId]
@@ -55,7 +62,7 @@ export default function Plans() {
                 <p>履歴保存・文章コピー</p>
                 {planId !== "month1" ? <p className="font-black text-teal-700">1か月あたり約¥{monthly.toLocaleString("ja-JP")}</p> : null}
               </div>
-              {user ? (
+              {user && access.accountType !== "company" ? (
                 <button
                   type="button"
                   onClick={() => checkout(planId)}
@@ -64,11 +71,11 @@ export default function Plans() {
                 >
                   {processing === planId ? "決済画面を準備中..." : `${plan.label}プランを購入`}
                 </button>
-              ) : (
+              ) : !user ? (
                 <Link href="/auth/register" className="mt-6 flex w-full justify-center rounded-2xl bg-slate-950 px-5 py-4 font-black text-white">
                   会員登録して購入
                 </Link>
-              )}
+              ) : <div className="mt-6 rounded-2xl bg-slate-100 px-5 py-4 text-center font-black text-slate-500">企業契約で利用中</div>}
             </section>
           )
         })}

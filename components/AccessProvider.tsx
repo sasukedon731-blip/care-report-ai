@@ -9,6 +9,10 @@ type AccessState = {
   periodEnd: string | null
   usedToday: number
   remainingToday: number
+  accountType: "personal" | "company"
+  companyCode: string | null
+  companyName: string | null
+  role: string
 }
 
 type AccessContextValue = AccessState & {
@@ -22,6 +26,10 @@ const empty: AccessState = {
   periodEnd: null,
   usedToday: 0,
   remainingToday: 0,
+  accountType: "personal",
+  companyCode: null,
+  companyName: null,
+  role: "staff",
 }
 
 const AccessContext = createContext<AccessContextValue>({

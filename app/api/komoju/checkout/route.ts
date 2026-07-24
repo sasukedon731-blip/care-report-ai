@@ -16,6 +16,10 @@ export async function POST(req: Request) {
     if (!process.env.KOMOJU_SECRET_KEY || !process.env.NEXT_PUBLIC_APP_URL) {
       return NextResponse.json({ error: "決済設定が完了していません。" }, { status: 500 })
     }
+    const accountSnap = await getAdminDb().doc(`users/${token.uid}`).get()
+    if (accountSnap.data()?.accountType === "company") {
+      return NextResponse.json({ error: "企業契約ユーザーは個人プランを購入する必要はありません。" }, { status: 403 })
+    }
 
     const plan = PLANS[planId]
     const user = await adminAuthUser(token.uid)

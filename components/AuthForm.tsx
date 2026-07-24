@@ -3,9 +3,8 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { FormEvent, useState } from "react"
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth"
-import { doc, serverTimestamp, setDoc } from "firebase/firestore"
-import { auth, db } from "@/lib/firebase"
+import { createUserWithEmailAndPassword, deleteUser, signInWithEmailAndPassword, updateProfile } from "firebase/auth"
+import { auth } from "@/lib/firebase"
 
 type Props = {
   mode: "login" | "register"
@@ -16,6 +15,8 @@ export default function AuthForm({ mode }: Props) {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [companyUser, setCompanyUser] = useState(false)
+  const [companyCode, setCompanyCode] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -34,6 +35,10 @@ export default function AuthForm({ mode }: Props) {
       setError("お名前を入力してください。")
       return
     }
+    if (isRegister && companyUser && !companyCode.trim()) {
+      setError("企業コードを入力してください。")
+      return
+    }
 
     if (password.length < 6) {
       setError("パスワードは6文字以上で入力してください。")
@@ -45,20 +50,26 @@ export default function AuthForm({ mode }: Props) {
     try {
       if (isRegister) {
         const credential = await createUserWithEmailAndPassword(auth, email.trim(), password)
-        await updateProfile(credential.user, { displayName: name.trim() })
-        await setDoc(doc(db, "users", credential.user.uid), {
-          uid: credential.user.uid,
-          name: name.trim(),
-          email: email.trim(),
-          role: "staff",
-          billing: {
-            status: "none",
-            currentPlan: null,
-            currentPeriodEnd: null,
-          },
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        })
+        try {
+          await updateProfile(credential.user, { displayName: name.trim() })
+          const idToken = await credential.user.getIdToken(true)
+          const response = await fetch("/api/account/register", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({
+              name: name.trim(),
+              companyCode: companyUser ? companyCode.trim() : "",
+            }),
+          })
+          const data = await response.json()
+          if (!response.ok) throw new Error(data.error ?? "会員情報を登録できませんでした。")
+        } catch (registerError) {
+          await deleteUser(credential.user).catch(() => undefined)
+          throw registerError
+        }
       } else {
         await signInWithEmailAndPassword(auth, email.trim(), password)
       }
@@ -91,6 +102,7 @@ export default function AuthForm({ mode }: Props) {
       </p>
 
       {isRegister ? (
+        <>
         <label className="mt-6 block">
           <span className="text-sm font-black text-slate-800">お名前</span>
           <input
@@ -100,6 +112,33 @@ export default function AuthForm({ mode }: Props) {
             placeholder="例：山田 太郎"
           />
         </label>
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={companyUser}
+              onChange={(e) => setCompanyUser(e.target.checked)}
+              className="mt-1 h-5 w-5 accent-teal-700"
+            />
+            <span>
+              <span className="block text-sm font-black text-slate-900">企業契約で利用する</span>
+              <span className="mt-1 block text-xs leading-6 text-slate-600">勤務先から案内された企業コードをお持ちの方はこちらを選択してください。個人でのお支払いは不要です。</span>
+            </span>
+          </label>
+          {companyUser ? (
+            <label className="mt-4 block">
+              <span className="text-sm font-black text-slate-800">企業コード</span>
+              <input
+                value={companyCode}
+                onChange={(e) => setCompanyCode(e.target.value.toUpperCase())}
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white p-4 font-mono font-black uppercase tracking-wider text-slate-900 outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-100"
+                placeholder="例：OUTIN001"
+                autoCapitalize="characters"
+              />
+            </label>
+          ) : null}
+        </div>
+        </>
       ) : null}
 
       <label className="mt-5 block">

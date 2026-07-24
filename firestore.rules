@@ -9,26 +9,20 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
-    function validNewUser(uid) {
-      return isSelf(uid)
-        && request.resource.data.uid == uid
-        && request.resource.data.role == "staff"
-        && request.resource.data.billing.status == "none"
-        && request.resource.data.billing.currentPlan == null
-        && request.resource.data.billing.currentPeriodEnd == null;
-    }
-
     function protectedUserFieldsUnchanged() {
       return request.resource.data.uid == resource.data.uid
         && request.resource.data.role == resource.data.role
-        && request.resource.data.billing == resource.data.billing;
+        && request.resource.data.accountType == resource.data.accountType
+        && request.resource.data.companyCode == resource.data.companyCode
+        && request.resource.data.companyName == resource.data.companyName
+        && request.resource.data.billing == resource.data.billing
+        && request.resource.data.usage == resource.data.usage;
     }
 
     match /users/{userId} {
-      allow create: if validNewUser(userId);
+      allow create, delete: if false;
       allow read: if isSelf(userId);
       allow update: if isSelf(userId) && protectedUserFieldsUnchanged();
-      allow delete: if false;
 
       match /reports/{reportId} {
         allow read, create, update, delete: if isSelf(userId);
@@ -38,6 +32,10 @@ service cloud.firestore {
         allow read: if isSelf(userId);
         allow write: if false;
       }
+    }
+
+    match /companies/{companyCode} {
+      allow read, write: if false;
     }
 
     match /paymentEvents/{eventId} {
