@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import OpenAI from "openai"
 import { buildCareReportPrompt } from "@/lib/careReportPrompt"
 import { detectCareTerms } from "@/lib/careTerms"
+import { consumeUsage, refundUsage, verifyBearer } from "@/lib/serverAccess"
 
 export const runtime = "nodejs"
 
@@ -29,7 +30,9 @@ function fallbackParse(text: string): CareReportResult {
 }
 
 export async function POST(req: Request) {
+  let chargedUid: string | null = null
   try {
+    const token = await verifyBearer(req)
     const { inputText } = await req.json()
 
     if (!inputText || typeof inputText !== "string" || inputText.trim().length < 5) {
@@ -47,6 +50,8 @@ export async function POST(req: Request) {
     }
 
     const detectedTerms = detectCareTerms(inputText.trim())
+    const usage = await consumeUsage(token.uid)
+    chargedUid = token.uid
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -73,6 +78,7 @@ export async function POST(req: Request) {
       const parsed = JSON.parse(raw) as CareReportResult
       return NextResponse.json({
         ...parsed,
+        usage,
         detectedTerms: parsed.detectedTerms?.length
           ? parsed.detectedTerms
           : detectedTerms.map((item) => ({
@@ -83,9 +89,19 @@ export async function POST(req: Request) {
             })),
       })
     } catch {
-      return NextResponse.json(fallbackParse(raw))
+      return NextResponse.json({ ...fallbackParse(raw), usage })
     }
   } catch (error) {
+    if (chargedUid) await refundUsage(chargedUid).catch(console.error)
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "ログインが必要です。", code: "UNAUTHORIZED" }, { status: 401 })
+    }
+    if (error instanceof Error && error.message === "PAYMENT_REQUIRED") {
+      return NextResponse.json({ error: "有効な利用プランが必要です。", code: "PAYMENT_REQUIRED" }, { status: 402 })
+    }
+    if (error instanceof Error && error.message === "DAILY_LIMIT") {
+      return NextResponse.json({ error: "本日の利用上限（5回）に達しました。", code: "DAILY_LIMIT" }, { status: 429 })
+    }
     console.error(error)
     return NextResponse.json(
       { error: "AI添削中にエラーが発生しました。" },

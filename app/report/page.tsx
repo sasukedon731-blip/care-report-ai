@@ -1,6 +1,7 @@
 import Link from "next/link"
 import CareReportForm from "@/components/CareReportForm"
 import UserMenu from "@/components/UserMenu"
+import BillingStatus from "@/components/BillingStatus"
 
 export default function ReportPage() {
   return (
@@ -18,12 +19,13 @@ export default function ReportPage() {
           </div>
           <div className="flex flex-col gap-3">
             <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">
-              MVP：会員登録＋写真読み取り＋履歴保存版
+              1日5回まで利用できます
             </div>
             <UserMenu />
           </div>
         </header>
 
+        <div className="mb-6"><BillingStatus /></div>
         <CareReportForm />
       </div>
     </main>

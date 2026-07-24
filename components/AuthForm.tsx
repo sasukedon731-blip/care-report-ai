@@ -51,7 +51,11 @@ export default function AuthForm({ mode }: Props) {
           name: name.trim(),
           email: email.trim(),
           role: "staff",
-          plan: "free",
+          billing: {
+            status: "none",
+            currentPlan: null,
+            currentPeriodEnd: null,
+          },
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         })
@@ -77,7 +81,7 @@ export default function AuthForm({ mode }: Props) {
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-xl rounded-[2rem] border border-emerald-100 bg-white/95 p-6 shadow-xl shadow-emerald-900/5 md:p-8">
       <p className="mb-3 inline-flex rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-800">
-        {isRegister ? "無料会員登録" : "ログイン"}
+        {isRegister ? "会員登録" : "ログイン"}
       </p>
       <h1 className="text-3xl font-black text-slate-900">
         {isRegister ? "ケアレポAIをはじめる" : "ケアレポAIにログイン"}
@@ -143,7 +147,7 @@ export default function AuthForm({ mode }: Props) {
         ) : (
           <>
             アカウントがない場合は{" "}
-            <Link href="/auth/register" className="font-black text-emerald-700 hover:text-emerald-900">無料会員登録</Link>
+            <Link href="/auth/register" className="font-black text-emerald-700 hover:text-emerald-900">会員登録</Link>
           </>
         )}
       </div>

@@ -24,7 +24,7 @@ export default function UserMenu() {
           ログイン
         </Link>
         <Link href="/auth/register" className="rounded-2xl bg-emerald-600 px-4 py-3 text-center text-sm font-black text-white hover:bg-emerald-700">
-          無料登録
+          会員登録
         </Link>
       </div>
     )

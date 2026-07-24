@@ -1,12 +1,47 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function validNewUser(uid) {
+      return isSelf(uid)
+        && request.resource.data.uid == uid
+        && request.resource.data.role == "staff"
+        && request.resource.data.billing.status == "none"
+        && request.resource.data.billing.currentPlan == null
+        && request.resource.data.billing.currentPeriodEnd == null;
+    }
+
+    function protectedUserFieldsUnchanged() {
+      return request.resource.data.uid == resource.data.uid
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.billing == resource.data.billing;
+    }
+
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow create: if validNewUser(userId);
+      allow read: if isSelf(userId);
+      allow update: if isSelf(userId) && protectedUserFieldsUnchanged();
+      allow delete: if false;
 
       match /reports/{reportId} {
-        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+        allow read, create, update, delete: if isSelf(userId);
       }
+
+      match /dailyUsage/{dateKey} {
+        allow read: if isSelf(userId);
+        allow write: if false;
+      }
+    }
+
+    match /paymentEvents/{eventId} {
+      allow read, write: if false;
     }
   }
 }

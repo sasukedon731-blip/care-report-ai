@@ -7,17 +7,11 @@ import CareReportResult from "./CareReportResult"
 import { CareReportResult as Result } from "@/lib/reportTypes"
 import { useAuth } from "./AuthProvider"
 import { db } from "@/lib/firebase"
+import { useAccess } from "./AccessProvider"
 
 type OcrResult = {
   text: string
   warnings?: string[]
-}
-
-type HistoryItem = {
-  id: string
-  createdAt: string
-  inputText: string
-  result: Result
 }
 
 const sampleText =
@@ -25,33 +19,14 @@ const sampleText =
 
 const MAX_IMAGE_SIZE_MB = 8
 const MAX_IMAGE_SIZE = MAX_IMAGE_SIZE_MB * 1024 * 1024
-const HISTORY_KEY = "care-report-ai-history"
-const MAX_HISTORY_COUNT = 30
 
 function stripBase64Prefix(dataUrl: string) {
   return dataUrl.replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, "")
 }
 
-function saveLocalHistory(inputText: string, result: Result) {
-  if (typeof window === "undefined") return
-
-  const raw = window.localStorage.getItem(HISTORY_KEY)
-  const current = raw ? (JSON.parse(raw) as HistoryItem[]) : []
-  const next: HistoryItem[] = [
-    {
-      id: `${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      inputText,
-      result,
-    },
-    ...current,
-  ].slice(0, MAX_HISTORY_COUNT)
-
-  window.localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
-}
-
 export default function CareReportForm() {
   const { user } = useAuth()
+  const access = useAccess()
   const [inputText, setInputText] = useState("")
   const [result, setResult] = useState<Result | null>(null)
   const [loading, setLoading] = useState(false)
@@ -108,9 +83,14 @@ export default function CareReportForm() {
     setOcrLoading(true)
 
     try {
+      if (!user) throw new Error("ログインが必要です。")
+      const idToken = await user.getIdToken()
       const res = await fetch("/api/ai/care-report-ocr", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
         body: JSON.stringify({
           imageBase64: stripBase64Prefix(imageDataUrl),
           mimeType: imageMimeType,
@@ -147,9 +127,14 @@ export default function CareReportForm() {
     setLoading(true)
 
     try {
+      if (!user) throw new Error("ログインが必要です。")
+      const idToken = await user.getIdToken()
       const res = await fetch("/api/ai/care-report", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
         body: JSON.stringify({ inputText: cleanText }),
       })
 
@@ -160,19 +145,15 @@ export default function CareReportForm() {
       }
 
       setResult(data)
+      await access.refresh()
 
-      if (user) {
-        await addDoc(collection(db, "users", user.uid, "reports"), {
-          inputText: cleanText,
-          result: data,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        })
-        setSavedMessage("この添削結果をマイページの履歴に保存しました。")
-      } else {
-        saveLocalHistory(cleanText, data)
-        setSavedMessage("ログインしていないため、この端末の履歴に保存しました。会員登録するとマイページに保存できます。")
-      }
+      await addDoc(collection(db, "users", user.uid, "reports"), {
+        inputText: cleanText,
+        result: data,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+      setSavedMessage("この添削結果をマイページの履歴に保存しました。")
     } catch (err) {
       setError(err instanceof Error ? err.message : "添削に失敗しました。")
     } finally {
@@ -200,7 +181,7 @@ export default function CareReportForm() {
         {!user ? (
           <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-7 text-emerald-900">
             マイページに履歴を残すにはログインが必要です。
-            <Link href="/auth/register" className="ml-1 font-black underline">無料会員登録</Link>
+            <Link href="/auth/register" className="ml-1 font-black underline">会員登録</Link>
             <span> / </span>
             <Link href="/auth/login" className="font-black underline">ログイン</Link>
           </div>
@@ -227,7 +208,7 @@ export default function CareReportForm() {
             <button
               type="button"
               onClick={handleOcr}
-              disabled={ocrLoading || !hasImage}
+              disabled={ocrLoading || !hasImage || !access.active || access.remainingToday <= 0}
               className="rounded-2xl bg-slate-900 px-5 py-3 font-black text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
               {ocrLoading ? "写真を読み取り中..." : "写真から文字を読み取る"}
@@ -274,7 +255,7 @@ export default function CareReportForm() {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={loading || ocrLoading}
+            disabled={loading || ocrLoading || !access.active || access.remainingToday <= 0}
             className="rounded-2xl bg-emerald-600 px-5 py-3 font-black text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-400"
           >
             {loading ? "AI添削中..." : "AIで添削する"}

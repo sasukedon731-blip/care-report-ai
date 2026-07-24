@@ -1,22 +1,28 @@
-# Care Report AI MVP（介護用語辞書・氏名そのまま対応版）
+# ケアレポAI
 
-介護報告文をAIで添削し、家族向け報告・社内向け報告に変換するMVPです。
-会員登録、ログイン、マイページ履歴保存、写真読み取り、介護略語・専門用語判定に対応しています。社内用として、読み取り・社内向け報告では氏名をA様に置き換えず、そのまま残す設定にしています。
+介護現場の報告文をAIで添削し、「家族向け報告」と「社内向け報告」に整理する販売用Webアプリです。写真からの文字読み取り、介護用語辞書、履歴保存、期間制決済、1日5回の利用制限に対応しています。
 
-## 追加された介護用語辞書
+## 料金
 
-入力文に `KOT`、`BT`、`BP`、`HR`、`SpO2`、`Ns`、`Dr`、`食介` などが含まれる場合、AIに渡す前に辞書で検出します。
+- 1か月：500円（税込）
+- 6か月：2,800円（税込）
+- 12か月：5,400円（税込）
+- 自動更新なし
+- AI添削は1日5回まで（日本時間0:00にリセット）
 
-- 社内向け報告：氏名をそのまま残し、略語を必要に応じて残す
-- 家族向け報告：略語をそのまま使わず、一般の家族に伝わる表現へ変換
+## 主な機能
 
-例：
-
-```text
-入力：田中花子様、KOTあり。BT36.5。食介一部介助。
-家族向け：排便が確認され、体温も確認しました。食事は一部お手伝いしながら召し上がりました。
-社内向け：田中花子様、KOTあり。BT36.5。食介一部介助。
-```
+- メールアドレス・パスワード認証
+- 報告書画像のOCR
+- 家族向け／社内向け文章の生成
+- `KOT`、`BT`、`BP`、`HR`、`SpO2`、`Ns`、`Dr`、`食介` 等の介護用語判定
+- 社内向け文章では入力された氏名を維持
+- Firestoreへの履歴保存
+- KOMOJU Hosted Page決済
+- Webhookによる利用期限の付与
+- サーバー側トランザクションによる1日5回制限
+- 特商法、利用規約、プライバシーポリシー、返金方針、お問い合わせ
+- PWA／ホーム画面アイコン
 
 ## セットアップ
 
@@ -26,46 +32,44 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
-`.env.local` に以下を設定してください。
+`.env.local.example` を参考に、OpenAI、Firebaseクライアント、Firebase Admin、KOMOJU、公開URLを設定してください。
 
-```env
-OPENAI_API_KEY=
-NEXT_PUBLIC_FIREBASE_API_KEY=
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-NEXT_PUBLIC_FIREBASE_APP_ID=
-```
+Firebase Adminの秘密鍵は、Vercelでは改行を `\n` に置き換えた1行の環境変数として登録します。
 
 ## Firebase
 
-Authentication でメール/パスワードを有効化してください。
-Firestore Database を作成し、同梱の `firestore.rules` を適用してください。
+1. Authenticationでメール／パスワードを有効化
+2. Firestore Databaseを作成
+3. 同梱の `firestore.rules` をデプロイ
+4. Firebase Admin用サービスアカウント情報を環境変数へ登録
 
-## 主なファイル
+課金情報と日次利用回数はクライアントから変更できないルールです。
 
-- `lib/careTerms.ts`：介護用語辞書
-- `lib/careReportPrompt.ts`：介護用語対応プロンプト
-- `app/api/ai/care-report/route.ts`：AI添削API
-- `components/CareReportResult.tsx`：介護用語判定結果の表示
-- `components/MyPageReports.tsx`：マイページ履歴
+## KOMOJU
 
-## 今回の変更
+- Secret Keyを `KOMOJU_SECRET_KEY` に設定
+- Webhook Secretを `KOMOJU_WEBHOOK_SECRET` に設定
+- Webhook URLを `https://公開ドメイン/api/komoju/webhook` に設定
+- 入金完了イベントを送信するよう設定
 
-- OCR読み取り時に氏名をA様・B様へ置換しない
-- 社内向け報告では入力された氏名をそのまま使用
-- TOP画面・入力画面の注意文を社内利用前提に変更
-- `.gitignore` を追加し、`node_modules` / `.next` / `.env.local` がGitに入らないように設定
+カード決済は決済完了後、コンビニ決済は入金確認後に利用権が付与されます。
 
-## PWA / ホーム画面アイコン
+## 公開前チェック
 
-この版では `public/` フォルダにPWA用アイコンを追加済みです。
+```bash
+npm run build
+```
 
-- `public/icon-192.png`
-- `public/icon-512.png`
-- `public/icon-1024.png`
-- `public/apple-touch-icon.png`
-- `public/favicon.ico`
+テスト環境で以下を確認してください。
 
-`app/manifest.ts` と `app/layout.tsx` も反映済みなので、Vercel公開後にiPhone / iPad の Safari から「共有」→「ホーム画面に追加」でアイコン表示できます。
+- 新規登録
+- 未購入ユーザーがAI APIを利用できないこと
+- 3プランの決済画面と金額
+- カード決済後の利用権反映
+- コンビニ入金テスト後の利用権反映
+- 1日5回利用後に6回目が拒否されること
+- 翌日0:00（日本時間）以降に回数が戻ること
+- 履歴保存と削除
+- iPhone／iPadのホーム画面アイコン
+
+`.env.local`、`node_modules`、`.next` は完成ZIPおよびGitへ含めないでください。

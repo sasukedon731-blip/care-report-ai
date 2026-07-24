@@ -1,6 +1,7 @@
 import Link from "next/link"
 import MyPageReports from "@/components/MyPageReports"
 import UserMenu from "@/components/UserMenu"
+import BillingStatus from "@/components/BillingStatus"
 
 export default function MyPage() {
   return (
@@ -19,6 +20,7 @@ export default function MyPage() {
           <UserMenu />
         </header>
 
+        <div className="mb-6"><BillingStatus /></div>
         <MyPageReports />
       </div>
     </main>

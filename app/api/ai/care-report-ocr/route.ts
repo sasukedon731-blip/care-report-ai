@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import OpenAI from "openai"
+import { getAccessState, verifyBearer } from "@/lib/serverAccess"
 
 export const runtime = "nodejs"
 
@@ -11,6 +12,14 @@ function isSupportedMimeType(mimeType: string) {
 
 export async function POST(req: Request) {
   try {
+    const token = await verifyBearer(req)
+    const access = await getAccessState(token.uid)
+    if (!access.active) {
+      return NextResponse.json({ error: "有効な利用プランが必要です。", code: "PAYMENT_REQUIRED" }, { status: 402 })
+    }
+    if (access.remainingToday <= 0) {
+      return NextResponse.json({ error: "本日の利用上限（5回）に達しました。", code: "DAILY_LIMIT" }, { status: 429 })
+    }
     const { imageBase64, mimeType } = await req.json()
 
     if (!imageBase64 || typeof imageBase64 !== "string") {
@@ -80,6 +89,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ text: raw, warnings: ["JSON形式で解析できなかったため、出力をそのまま表示しています。"] })
     }
   } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "ログインが必要です。", code: "UNAUTHORIZED" }, { status: 401 })
+    }
     console.error(error)
     return NextResponse.json(
       { error: "写真読み取り中にエラーが発生しました。" },

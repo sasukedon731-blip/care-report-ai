@@ -2,14 +2,14 @@ import type { MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "介護報告AI",
-    short_name: "介護報告AI",
-    description: "介護報告書AI添削アプリ",
+    name: "ケアレポAI",
+    short_name: "ケアレポAI",
+    description: "介護報告文を家族向け・社内向けに整理するAI添削アプリ",
     start_url: "/",
     scope: "/",
     display: "standalone",
     background_color: "#ffffff",
-    theme_color: "#2f4a68",
+    theme_color: "#073b4c",
     icons: [
       {
         src: "/icon-192.png",
