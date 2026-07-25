@@ -2,8 +2,28 @@ import { NextResponse } from "next/server"
 import { FieldValue, Timestamp } from "firebase-admin/firestore"
 import { getAdminDb } from "@/lib/firebaseAdmin"
 import { normalizeCompanyCode, requireRole, serializeCompany } from "@/lib/companyServer"
+import { COMPANY_PLANS, isFixedCompanyPlan } from "@/lib/companyPlans"
 
 export const runtime = "nodejs"
+
+function resolvePlan(body: Record<string, unknown>) {
+  if (isFixedCompanyPlan(body.planId)) return COMPANY_PLANS[body.planId]
+  if (body.planId === "enterprise") {
+    const seatLimit = Number(body.seatLimit)
+    const monthlyPrice = Number(body.monthlyPrice)
+    if (!Number.isInteger(seatLimit) || seatLimit < 51 || seatLimit > 10000 || !Number.isInteger(monthlyPrice) || monthlyPrice < 1) {
+      throw new Error("INVALID_PLAN")
+    }
+    return {
+      id: "enterprise",
+      label: "エンタープライズ",
+      seatLimit,
+      pricePerSeat: Math.round(monthlyPrice / seatLimit),
+      monthlyPrice,
+    }
+  }
+  throw new Error("INVALID_PLAN")
+}
 
 function dateValue(value: unknown, endOfDay = false) {
   if (typeof value !== "string" || !value) return null
@@ -32,9 +52,12 @@ export async function POST(req: Request) {
     const body = await req.json()
     const companyCode = normalizeCompanyCode(body.companyCode)
     const companyName = String(body.companyName ?? "").trim().slice(0, 120)
-    const seatLimit = Number(body.seatLimit)
-    if (!companyCode || !companyName || !Number.isInteger(seatLimit) || seatLimit < 1 || seatLimit > 10000) {
-      return NextResponse.json({ error: "企業名・企業コード・契約人数を正しく入力してください。" }, { status: 400 })
+    let plan
+    try { plan = resolvePlan(body) } catch {
+      return NextResponse.json({ error: "契約プランを正しく入力してください。" }, { status: 400 })
+    }
+    if (!companyCode || !companyName) {
+      return NextResponse.json({ error: "企業名・企業コードを正しく入力してください。" }, { status: 400 })
     }
 
     const ref = getAdminDb().doc(`companies/${companyCode}`)
@@ -45,11 +68,14 @@ export async function POST(req: Request) {
       companyCode,
       companyName,
       status: body.status === "active" ? "active" : "pending",
-      seatLimit,
+      seatLimit: plan.seatLimit,
       memberCount: 0,
       contractStart: dateValue(body.contractStart),
       contractEnd: dateValue(body.contractEnd, true),
-      pricePerSeat: 500,
+      planId: plan.id,
+      planLabel: plan.label,
+      pricePerSeat: plan.pricePerSeat,
+      monthlyPrice: plan.monthlyPrice,
       billingMethod: "bank_transfer",
       adminEmail: String(body.adminEmail ?? "").trim().toLowerCase().slice(0, 200),
       createdAt: FieldValue.serverTimestamp(),
@@ -71,21 +97,28 @@ export async function PATCH(req: Request) {
     const body = await req.json()
     const companyCode = normalizeCompanyCode(body.companyCode)
     const companyName = String(body.companyName ?? "").trim().slice(0, 120)
-    const seatLimit = Number(body.seatLimit)
+    let plan
+    try { plan = resolvePlan(body) } catch {
+      return NextResponse.json({ error: "契約プランを正しく入力してください。" }, { status: 400 })
+    }
     const status = ["pending", "active", "suspended"].includes(body.status) ? body.status : "pending"
-    if (!companyCode || !companyName || !Number.isInteger(seatLimit) || seatLimit < 1 || seatLimit > 10000) {
+    if (!companyCode || !companyName) {
       return NextResponse.json({ error: "入力内容を確認してください。" }, { status: 400 })
     }
     const ref = getAdminDb().doc(`companies/${companyCode}`)
     const current = await ref.get()
     if (!current.exists) return NextResponse.json({ error: "企業が見つかりません。" }, { status: 404 })
-    if (seatLimit < Number(current.data()?.memberCount ?? 0)) {
+    if (plan.seatLimit < Number(current.data()?.memberCount ?? 0)) {
       return NextResponse.json({ error: "契約人数を登録済み人数より少なくできません。" }, { status: 400 })
     }
     await ref.update({
       companyName,
       status,
-      seatLimit,
+      seatLimit: plan.seatLimit,
+      planId: plan.id,
+      planLabel: plan.label,
+      pricePerSeat: plan.pricePerSeat,
+      monthlyPrice: plan.monthlyPrice,
       contractStart: dateValue(body.contractStart),
       contractEnd: dateValue(body.contractEnd, true),
       adminEmail: String(body.adminEmail ?? "").trim().toLowerCase().slice(0, 200),

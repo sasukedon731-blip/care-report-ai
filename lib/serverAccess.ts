@@ -1,6 +1,6 @@
 import { FieldValue, Timestamp } from "firebase-admin/firestore"
 import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin"
-import { DAILY_USAGE_LIMIT } from "@/lib/plans"
+import { DAILY_USAGE_LIMIT } from "@/lib/companyPlans"
 
 export type AccessState = {
   uid: string
@@ -60,15 +60,11 @@ export async function getAccessState(uid: string): Promise<AccessState> {
     data.role = "admin"
     await userSnap.ref.set({ role: "admin", updatedAt: FieldValue.serverTimestamp() }, { merge: true })
   }
-  const periodEndDate = toDate(data.billing?.currentPeriodEnd)
-  const personalActive =
-    data.billing?.status === "paid" &&
-    Boolean(periodEndDate && periodEndDate.getTime() > Date.now())
   const companyCode = typeof data.companyCode === "string" ? data.companyCode : null
   const companySnap = companyCode ? await adminDb.doc(`companies/${companyCode}`).get() : null
   const company = companySnap?.data() ?? {}
   const companyActive = data.accountType === "company" && companySnap?.exists && companyIsActive(company)
-  const active = Boolean(personalActive || companyActive)
+  const active = Boolean(companyActive)
   const dateKey = tokyoDateKey()
   const usageSnap = await adminDb.doc(`users/${uid}/dailyUsage/${dateKey}`).get()
   const usedToday = Number(usageSnap.data()?.count ?? 0)
@@ -76,8 +72,8 @@ export async function getAccessState(uid: string): Promise<AccessState> {
   return {
     uid,
     active,
-    planId: typeof data.billing?.currentPlan === "string" ? data.billing.currentPlan : null,
-    periodEnd: companyActive ? toIso(company.contractEnd) : periodEndDate?.toISOString() ?? null,
+    planId: typeof company.planId === "string" ? company.planId : null,
+    periodEnd: companyActive ? toIso(company.contractEnd) : toIso(company.contractEnd),
     usedToday,
     remainingToday: Math.max(0, DAILY_USAGE_LIMIT - usedToday),
     accountType: data.accountType === "company" ? "company" : "personal",
@@ -99,16 +95,12 @@ export async function consumeUsage(uid: string) {
       transaction.get(usageRef),
     ])
     const user = userSnap.data() ?? {}
-    const periodEnd = toDate(user.billing?.currentPeriodEnd)
-    const personalActive =
-      user.billing?.status === "paid" &&
-      Boolean(periodEnd && periodEnd.getTime() > Date.now())
     const companyCode = typeof user.companyCode === "string" ? user.companyCode : null
     const companySnap = companyCode ? await transaction.get(adminDb.doc(`companies/${companyCode}`)) : null
     const companyActive =
       user.accountType === "company" &&
       Boolean(companySnap?.exists && companyIsActive(companySnap.data() ?? {}))
-    const active = personalActive || companyActive
+    const active = companyActive
 
     if (!active) throw new Error("PAYMENT_REQUIRED")
 

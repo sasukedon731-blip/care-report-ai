@@ -11,6 +11,9 @@ export type CompanyData = {
   contractStart: string | null
   contractEnd: string | null
   pricePerSeat: number
+  planId: string
+  planLabel: string
+  monthlyPrice: number
   billingMethod: "bank_transfer"
   adminEmail: string
 }
@@ -53,6 +56,9 @@ export function serializeCompany(id: string, data: Record<string, unknown>): Com
     contractStart: toIso(data.contractStart),
     contractEnd: toIso(data.contractEnd),
     pricePerSeat: Number(data.pricePerSeat ?? 500),
+    planId: String(data.planId ?? ""),
+    planLabel: String(data.planLabel ?? ""),
+    monthlyPrice: Number(data.monthlyPrice ?? 0),
     billingMethod: "bank_transfer",
     adminEmail: String(data.adminEmail ?? ""),
   }

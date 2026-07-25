@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useAuth } from "./AuthProvider"
 
-type Company = { companyCode: string; companyName: string; seatLimit: number; memberCount: number; contractEnd: string | null; status: string }
+type Company = { companyCode: string; companyName: string; seatLimit: number; memberCount: number; contractEnd: string | null; status: string; planLabel: string; monthlyPrice: number }
 type Member = { uid: string; name: string; email: string; role: string; totalCount: number; lastUsedAt: string | null; createdAt: string | null }
 
 function date(value: string | null) {
@@ -67,7 +67,7 @@ export default function CompanyDashboard() {
         {[["契約人数", `${company.seatLimit}人`], ["登録済み", `${company.memberCount}人`], ["残り枠", `${Math.max(0, company.seatLimit - company.memberCount)}人`], ["利用経験あり", `${activeMembers}人`]].map(([label, value]) => <div key={label} className="rounded-2xl border bg-white p-5 shadow-sm"><p className="text-sm font-bold text-slate-500">{label}</p><p className="mt-2 text-3xl font-black text-slate-950">{value}</p></div>)}
       </section>
       <section className="rounded-[2rem] border bg-white p-6 shadow-lg">
-        <div className="flex flex-wrap items-center justify-between gap-4"><div><h2 className="text-2xl font-black text-slate-950">{company.companyName}</h2><p className="mt-1 text-sm text-slate-600">企業コード：<span className="font-mono font-black">{company.companyCode}</span> ／ 契約期限：{company.contractEnd?.slice(0, 10) ?? "未設定"}</p></div><button onClick={downloadCsv} className="rounded-2xl bg-teal-700 px-5 py-3 font-black text-white">CSV出力</button></div>
+        <div className="flex flex-wrap items-center justify-between gap-4"><div><h2 className="text-2xl font-black text-slate-950">{company.companyName}</h2><p className="mt-1 text-sm text-slate-600">企業コード：<span className="font-mono font-black">{company.companyCode}</span> ／ {company.planLabel || "法人契約"} ／ 契約期限：{company.contractEnd?.slice(0, 10) ?? "未設定"}</p></div><button onClick={downloadCsv} className="rounded-2xl bg-teal-700 px-5 py-3 font-black text-white">CSV出力</button></div>
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-sm"><thead><tr className="border-b text-slate-500"><th className="p-3">職員</th><th className="p-3">メール</th><th className="p-3">累計添削</th><th className="p-3">最終利用</th><th className="p-3">状態</th></tr></thead><tbody>
             {members.map((member) => <tr key={member.uid} className="border-b border-slate-100"><td className="p-3 font-black">{member.name}{member.role === "company_admin" ? <span className="ml-2 rounded bg-blue-50 px-2 py-1 text-xs text-blue-700">管理者</span> : null}</td><td className="p-3">{member.email}</td><td className="p-3 font-black">{member.totalCount}回</td><td className="p-3">{date(member.lastUsedAt)}</td><td className="p-3">{member.totalCount === 0 ? "未利用" : "利用中"}</td></tr>)}

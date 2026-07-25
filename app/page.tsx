@@ -26,14 +26,11 @@ export default function HomePage() {
               <Link href="/report" className="inline-flex w-full items-center justify-center rounded-2xl bg-teal-700 px-6 py-4 text-base font-black text-white shadow-lg transition hover:bg-teal-800 md:w-auto">
                 報告書を添削する
               </Link>
-              <Link href="/plans" className="inline-flex w-full items-center justify-center rounded-2xl border border-teal-200 bg-white px-6 py-4 text-base font-black text-teal-800 transition hover:bg-teal-50 md:w-auto">
-                料金プランを見る
+              <Link href="/for-business" className="inline-flex w-full items-center justify-center rounded-2xl border border-teal-200 bg-white px-6 py-4 text-base font-black text-teal-800 transition hover:bg-teal-50 md:w-auto">
+                法人プランを見る
               </Link>
               <Link href="/mypage" className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-4 text-base font-black text-slate-700 transition hover:bg-slate-50 md:w-auto">
                 マイページ
-              </Link>
-              <Link href="/for-business" className="inline-flex w-full items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 px-6 py-4 text-base font-black text-blue-800 transition hover:bg-blue-100 md:w-auto">
-                法人向け
               </Link>
             </div>
           </div>

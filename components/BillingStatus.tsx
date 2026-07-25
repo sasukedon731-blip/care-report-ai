@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { DAILY_USAGE_LIMIT, PLANS, PlanId } from "@/lib/plans"
+import { DAILY_USAGE_LIMIT } from "@/lib/companyPlans"
 import { useAuth } from "./AuthProvider"
 import { useAccess } from "./AccessProvider"
 
@@ -35,8 +35,8 @@ export default function BillingStatus() {
   if (!access.active) {
     return (
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-950">
-        現在、有効な利用プランがありません。
-        <Link href="/plans" className="ml-1 font-black underline">料金プランを見る</Link>
+        現在、有効な企業契約がありません。勤務先の管理者または当社へお問い合わせください。
+        <Link href="/contact" className="ml-1 font-black underline">お問い合わせ</Link>
       </div>
     )
   }
@@ -53,14 +53,5 @@ export default function BillingStatus() {
     )
   }
 
-  const plan = access.planId && access.planId in PLANS ? PLANS[access.planId as PlanId] : null
-  return (
-    <div className="rounded-2xl border border-teal-200 bg-teal-50 p-4 text-sm text-teal-950">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-black">{plan?.label ?? "有料"}プラン利用中</p>
-        <p className="font-black">本日あと {access.remainingToday} / {DAILY_USAGE_LIMIT} 回</p>
-      </div>
-      <p className="mt-1 text-xs font-bold text-teal-800">利用期限：{formatDate(access.periodEnd)} ／ 回数は毎日0:00（日本時間）にリセット</p>
-    </div>
-  )
+  return null
 }

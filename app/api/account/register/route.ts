@@ -29,19 +29,16 @@ export async function POST(req: Request) {
       if (existing.exists) return
 
       if (!companyCode) {
+        if (!isSystemAdmin(token.email)) throw new Error("COMPANY_REQUIRED")
         transaction.create(userRef, {
           uid: token.uid,
           name,
           email: token.email ?? "",
-          role: isSystemAdmin(token.email) ? "admin" : "staff",
-          accountType: "personal",
+          role: "admin",
+          accountType: "admin",
           companyCode: null,
           companyName: null,
-          billing: {
-            status: "none",
-            currentPlan: null,
-            currentPeriodEnd: null,
-          },
+          billing: { status: "admin" },
           usage: { totalCount: 0, lastUsedAt: null },
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
@@ -87,6 +84,7 @@ export async function POST(req: Request) {
   } catch (error) {
     const code = error instanceof Error ? error.message : ""
     if (code === "INVALID_COMPANY") return NextResponse.json({ error: "企業コードが見つかりません。" }, { status: 400 })
+    if (code === "COMPANY_REQUIRED") return NextResponse.json({ error: "会員登録には有効な企業コードが必要です。" }, { status: 400 })
     if (code === "INACTIVE_COMPANY") return NextResponse.json({ error: "この企業コードは現在利用できません。" }, { status: 403 })
     if (code === "SEAT_LIMIT") return NextResponse.json({ error: "この企業は契約人数の上限に達しています。企業管理者へご連絡ください。" }, { status: 409 })
     if (code === "UNAUTHORIZED") return NextResponse.json({ error: "認証に失敗しました。" }, { status: 401 })

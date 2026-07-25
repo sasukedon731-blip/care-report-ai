@@ -37,9 +37,5 @@ service cloud.firestore {
     match /companies/{companyCode} {
       allow read, write: if false;
     }
-
-    match /paymentEvents/{eventId} {
-      allow read, write: if false;
-    }
   }
 }

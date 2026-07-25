@@ -15,7 +15,6 @@ export default function AuthForm({ mode }: Props) {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [companyUser, setCompanyUser] = useState(false)
   const [companyCode, setCompanyCode] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -35,11 +34,6 @@ export default function AuthForm({ mode }: Props) {
       setError("お名前を入力してください。")
       return
     }
-    if (isRegister && companyUser && !companyCode.trim()) {
-      setError("企業コードを入力してください。")
-      return
-    }
-
     if (password.length < 6) {
       setError("パスワードは6文字以上で入力してください。")
       return
@@ -61,7 +55,7 @@ export default function AuthForm({ mode }: Props) {
             },
             body: JSON.stringify({
               name: name.trim(),
-              companyCode: companyUser ? companyCode.trim() : "",
+              companyCode: companyCode.trim(),
             }),
           })
           const data = await response.json()
@@ -98,7 +92,9 @@ export default function AuthForm({ mode }: Props) {
         {isRegister ? "ケアレポAIをはじめる" : "ケアレポAIにログイン"}
       </h1>
       <p className="mt-3 text-sm leading-7 text-slate-600">
-        会員登録すると、AI添削した報告書をマイページに保存できます。
+        {isRegister
+          ? "本サービスは介護施設・法人向けです。勤務先から案内された企業コードを入力してください。"
+          : "企業契約で登録したメールアドレスとパスワードを入力してください。"}
       </p>
 
       {isRegister ? (
@@ -112,32 +108,18 @@ export default function AuthForm({ mode }: Props) {
             placeholder="例：山田 太郎"
           />
         </label>
-        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <label className="flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              checked={companyUser}
-              onChange={(e) => setCompanyUser(e.target.checked)}
-              className="mt-1 h-5 w-5 accent-teal-700"
-            />
-            <span>
-              <span className="block text-sm font-black text-slate-900">企業契約で利用する</span>
-              <span className="mt-1 block text-xs leading-6 text-slate-600">勤務先から案内された企業コードをお持ちの方はこちらを選択してください。個人でのお支払いは不要です。</span>
-            </span>
-          </label>
-          {companyUser ? (
-            <label className="mt-4 block">
-              <span className="text-sm font-black text-slate-800">企業コード</span>
-              <input
-                value={companyCode}
-                onChange={(e) => setCompanyCode(e.target.value.toUpperCase())}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white p-4 font-mono font-black uppercase tracking-wider text-slate-900 outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-100"
-                placeholder="例：OUTIN001"
-                autoCapitalize="characters"
-              />
-            </label>
-          ) : null}
-        </div>
+        <label className="mt-5 block rounded-2xl border border-blue-200 bg-blue-50 p-4">
+          <span className="text-sm font-black text-slate-900">企業コード</span>
+          <span className="mt-1 block text-xs leading-6 text-slate-600">勤務先から案内されたコードを入力してください。企業コードをお持ちでない方は会員登録できません。</span>
+          <input
+            value={companyCode}
+            onChange={(e) => setCompanyCode(e.target.value.toUpperCase())}
+            className="mt-3 w-full rounded-2xl border border-blue-200 bg-white p-4 font-mono font-black uppercase tracking-wider text-slate-900 outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-100"
+            placeholder="例：OUTIN001"
+            autoCapitalize="characters"
+          />
+        </label>
+        <p className="mt-3 text-xs leading-6 text-slate-500">導入をご希望の施設は<Link href="/contact" className="ml-1 font-black text-teal-700 underline">お問い合わせ</Link>ください。</p>
         </>
       ) : null}
 
